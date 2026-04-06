@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass — College Admissions Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--navy:#0e1c38;--navy2:#162848;--gold:#c8922a;--gold2:#e8b84b;--cream:#f8f4ed;--cream2:#f0e9d6;--cream3:#e6dbc8;--white:#fff;--text:#1a1828;--text2:#4a4760;--text3:#8a889a;--border:rgba(14,28,56,.09);--border2:rgba(14,28,56,.16);--success:#22c55e;--warn:#f59e0b;--danger:#ef4444;--shadow:0 2px 16px rgba(14,28,56,.07);--shadow2:0 4px 32px rgba(14,28,56,.1);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+h1,h2,h3{font-family:'Playfair Display',serif;font-weight:600}
+.shell{display:grid;grid-template-columns:220px 1fr;flex:1;min-height:0}
+.sidebar{background:var(--navy);display:flex;flex-direction:column;overflow:hidden}
+.sb-logo{padding:1.2rem 1.2rem .9rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.sb-mark{width:32px;height:32px;border:1.5px solid var(--gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;color:var(--gold);font-weight:600;flex-shrink:0}
+.sb-title{font-family:'Playfair Display',serif;color:#fff;font-size:.9rem;font-weight:600}
+.sb-title span{color:var(--gold2);font-style:italic}
+.sb-nav{flex:1;padding:.6rem 0;overflow-y:auto}
+.nav-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.22);padding:.4rem 1.2rem .2rem;font-weight:500}
+.nav-item{display:flex;align-items:center;gap:9px;padding:.52rem 1.2rem;cursor:pointer;font-size:.82rem;color:rgba(255,255,255,.5);transition:all .15s;border-left:2.5px solid transparent}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.05)}
+.nav-item.active{color:#fff;border-left-color:var(--gold);background:rgba(255,255,255,.07)}
+.nav-icon{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+.sb-bottom{border-top:1px solid rgba(255,255,255,.06);padding:.75rem 1.2rem;flex-shrink:0}
+.api-row{display:flex;gap:5px;align-items:center;margin-bottom:.4rem}
+.api-row label{font-size:10px;color:rgba(255,255,255,.3);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em}
+.api-inp{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:#fff;font-size:11px;padding:4px 7px;font-family:'DM Sans',sans-serif;outline:none;min-width:0}
+.api-inp:focus{border-color:rgba(200,146,42,.5)}
+.api-inp::placeholder{color:rgba(255,255,255,.18)}
+.save-k{background:var(--gold);color:var(--navy);border:none;border-radius:5px;padding:4px 8px;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.save-k:hover{background:var(--gold2)}
+.sb-note{font-size:10px;color:rgba(255,255,255,.18);line-height:1.5}
+.pages{flex:1;overflow:hidden}
+.page{display:none;height:100%;overflow-y:auto;flex-direction:column}
+.page.active{display:flex}
+.page-hdr{background:var(--white);border-bottom:1px solid var(--border2);padding:.95rem 2rem;flex-shrink:0}
+.page-hdr h2{font-size:1.1rem;margin-bottom:.1rem}
+.page-hdr p{font-size:.75rem;color:var(--text3)}
+
+/* HOME */
+#page-home{background:var(--cream)}
+.home-hero{background:var(--navy);padding:2rem 2.5rem 1.75rem;flex-shrink:0;position:relative;overflow:hidden}
+.home-hero::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border:1px solid rgba(200,146,42,.12);border-radius:50%}
+.home-hero::after{content:'';position:absolute;right:20px;top:20px;width:110px;height:110px;border:1px solid rgba(200,146,42,.08);border-radius:50%}
+.hero-eye{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold2);margin-bottom:.4rem;font-weight:500}
+.home-hero h1{font-size:1.9rem;color:#fff;line-height:1.2;margin-bottom:.5rem}
+.home-hero h1 em{color:var(--gold2);font-style:italic}
+.home-hero p{font-size:.81rem;color:rgba(255,255,255,.45);max-width:440px;line-height:1.7}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-top:1.4rem}
+.hstat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:.65rem .85rem}
+.hstat-val{font-family:'Playfair Display',serif;font-size:1.35rem;color:#fff;font-weight:600}
+.hstat-lbl{font-size:10px;color:rgba(255,255,255,.33);margin-top:1px;text-transform:uppercase;letter-spacing:.05em}
+.home-body{padding:1.5rem 2.5rem;flex:1}
+.section-title{font-size:.69rem;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);margin-bottom:.65rem;font-weight:500}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-bottom:1.2rem}
+.hcard{background:var(--white);border:1px solid var(--border2);border-radius:13px;padding:1.15rem;box-shadow:var(--shadow);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:.45rem}
+.hcard:hover{transform:translateY(-3px);box-shadow:var(--shadow2)}
+.hcard-icon{font-size:18px;width:36px;height:36px;background:var(--cream2);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.hcard h3{font-size:.86rem;font-family:'DM Sans',sans-serif;font-weight:500}
+.hcard p{font-size:.74rem;color:var(--text3);line-height:1.6;flex:1}
+.hcard-arr{font-size:11px;color:var(--gold);align-self:flex-end}
+.home-bottom{background:var(--white);border:1px solid var(--border2);border-radius:13px;padding:1.15rem;box-shadow:var(--shadow)}
+.home-bottom h3{font-family:'Playfair Display',serif;font-size:.88rem;margin-bottom:.7rem}
+.cl-prev-item{display:flex;align-items:center;gap:8px;font-size:.77rem;color:var(--text2);padding:.35rem 0;border-bottom:1px solid var(--border);cursor:pointer}
+.cl-prev-item:last-child{border-bottom:none}
+.cl-prev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cl-prev-dot.pending{background:var(--border2)}.cl-prev-dot.urgent{background:var(--danger)}
+
+/* ADVISOR */
+#page-advisor{background:var(--cream)}
+.chat-shell{display:flex;flex-direction:column;height:100%}
+.chat-top{background:var(--white);border-bottom:1px solid var(--border2);padding:.75rem 1.6rem;display:flex;align-items:center;gap:11px;flex-shrink:0}
+.chat-av{width:34px;height:34px;background:var(--navy);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;color:var(--gold2);font-size:14px;flex-shrink:0}
+.chat-top h2{font-size:.87rem;font-family:'DM Sans',sans-serif;font-weight:500}
+.chat-top p{font-size:.7rem;color:var(--text3)}
+.live-dot{width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.topics{background:var(--white);border-bottom:1px solid var(--border);padding:.5rem 1.6rem;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0}
+.chip{padding:3px 9px;border:1px solid var(--border2);border-radius:20px;font-size:11px;color:var(--text2);cursor:pointer;background:var(--cream);transition:all .15s;white-space:nowrap}
+.chip:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+#chat-msgs{flex:1;overflow-y:auto;padding:1.2rem 1.6rem;display:flex;flex-direction:column;gap:.85rem}
+.msg{display:flex;gap:8px;align-items:flex-start;animation:fadeUp .25s ease}
+.msg.user{flex-direction:row-reverse}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg-av{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;margin-top:2px}
+.msg.assistant .msg-av{background:var(--navy);color:var(--gold2);font-family:'Playfair Display',serif;font-size:12px}
+.msg.user .msg-av{background:var(--cream2);color:var(--navy);border:1px solid var(--border2)}
+.msg-bbl{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;color:var(--text)}
+.msg.assistant .msg-bbl{background:var(--white);border:1px solid var(--border);border-radius:3px 12px 12px 12px;box-shadow:var(--shadow)}
+.msg.user .msg-bbl{background:var(--navy);color:#fff;border-radius:12px 3px 12px 12px}
+.msg-bbl p{margin-bottom:5px}.msg-bbl p:last-child{margin-bottom:0}
+.msg-bbl ul,.msg-bbl ol{padding-left:15px;margin:4px 0}.msg-bbl li{margin-bottom:2px}
+.msg-bbl strong{font-weight:500}
+.typing-wrap{display:flex;gap:4px;align-items:center;padding:3px 0}
+.typing-wrap span{width:6px;height:6px;border-radius:50%;background:var(--border2);animation:blink 1.3s infinite}
+.typing-wrap span:nth-child(2){animation-delay:.2s}.typing-wrap span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3;transform:scale(.85)}40%{opacity:1;transform:scale(1)}}
+.chat-input-row{background:var(--white);border-top:1px solid var(--border);padding:.8rem 1.6rem;display:flex;gap:7px;align-items:flex-end;flex-shrink:0}
+#advisor-input{flex:1;padding:8px 12px;border:1.5px solid var(--border2);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--cream);outline:none;resize:none;line-height:1.5;min-height:38px;max-height:110px;transition:border-color .2s}
+#advisor-input:focus{border-color:var(--navy);background:var(--white)}
+#advisor-input::placeholder{color:var(--text3)}
+.send-btn{padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;height:38px;transition:all .15s}
+.send-btn:hover{background:var(--navy2)}.send-btn:disabled{opacity:.4;cursor:default}
+
+/* DOCS */
+#page-docs .docs-body{padding:1.3rem 1.8rem;flex:1;overflow-y:auto}
+.model-pills{display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap}
+.mpill{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid}
+.mpill.vis{background:#e8f5ee;color:#2d6a4f;border-color:#9fe1cb}
+.mpill.txt{background:#e8eff8;color:#185fa5;border-color:#b5d4f4}
+.drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--white);margin-bottom:1rem;position:relative}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--gold);background:var(--cream2)}
+.drop-icon{font-size:2rem;margin-bottom:.5rem}
+.drop-zone h3{font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500;margin-bottom:.25rem}
+.drop-zone p{font-size:.73rem;color:var(--text3)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.atypes{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-bottom:1rem}
+.atype{background:var(--white);border:1.5px solid var(--border2);border-radius:9px;padding:.7rem;cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:8px}
+.atype:hover{border-color:var(--navy)}.atype.sel{border-color:var(--gold);background:#fdf8ee}
+.atype-ico{font-size:16px;flex-shrink:0;margin-top:1px}
+.atype-lbl{font-size:.77rem;font-weight:500;display:block;margin-bottom:1px}
+.atype-desc{font-size:.67rem;color:var(--text3);line-height:1.4}
+.doc-prev{background:var(--white);border:1px solid var(--border2);border-radius:11px;padding:.95rem;margin-bottom:.85rem}
+.doc-prev-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem}
+.doc-fname{font-size:.84rem;font-weight:500;display:flex;align-items:center;gap:7px}
+.fbadge{font-size:10px;padding:2px 7px;border-radius:9px;font-weight:500}
+.fbadge.img{background:#e8f5ee;color:#2d6a4f}.fbadge.pdf{background:#faeee9;color:#b85c38}.fbadge.txt{background:#e8eff8;color:#2d5a8e}
+#doc-thumb{width:100%;max-height:140px;object-fit:contain;border-radius:7px;border:1px solid var(--border);margin-bottom:.55rem;display:none}
+#doc-text-prev{font-size:11px;color:var(--text3);background:var(--cream);border-radius:6px;padding:.55rem;max-height:75px;overflow:hidden;font-family:monospace;line-height:1.5;margin-bottom:.55rem;display:none;white-space:pre-wrap}
+.status-bar{font-size:12px;color:var(--text3);padding:.3rem 0;margin-bottom:.35rem;display:none}
+.status-bar.err{color:var(--danger)}
+.analyze-btn{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:7px 15px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.analyze-btn:hover{background:var(--navy2)}.analyze-btn:disabled{opacity:.4;cursor:default}
+.result-card{background:var(--white);border:1px solid var(--border2);border-radius:11px;padding:1.1rem;box-shadow:var(--shadow)}
+.result-card h3{font-size:.88rem;margin-bottom:.6rem;display:flex;align-items:center;gap:7px}
+.result-content{font-size:12.5px;line-height:1.72;color:var(--text2)}
+.result-content p{margin-bottom:.4rem}.result-content ul,.result-content ol{padding-left:15px;margin:.35rem 0}.result-content li{margin-bottom:.22rem}.result-content strong{font-weight:500;color:var(--text)}
+
+/* SCHOOLS */
+#page-schools .schools-body{padding:1.3rem 1.8rem;flex:1;overflow-y:auto}
+.school-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:1.1rem}
+.sstat{background:var(--white);border:1px solid var(--border2);border-radius:9px;padding:.65rem .85rem;box-shadow:var(--shadow);text-align:center}
+.sstat-num{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:600}
+.sstat-lbl{font-size:.69rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-top:1px}
+.add-school-form{background:var(--white);border:1px solid var(--border2);border-radius:13px;padding:1.1rem;margin-bottom:1.1rem;box-shadow:var(--shadow)}
+.add-school-form h3{font-size:.79rem;font-family:'DM Sans',sans-serif;font-weight:500;margin-bottom:.75rem}
+.school-form-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:.55rem;margin-bottom:.55rem;position:relative}
+.ac-wrap{position:relative}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--border2);border-radius:0 0 9px 9px;max-height:180px;overflow-y:auto;z-index:1000;box-shadow:var(--shadow2);display:none}
+.ac-item{padding:7px 10px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:var(--cream)}
+.ac-meta{font-size:10.5px;color:var(--text3)}
+.school-form-row input,.school-form-row select{padding:6px 9px;border:1px solid var(--border2);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);background:var(--cream);outline:none;width:100%}
+.school-form-row input:focus,.school-form-row select:focus{border-color:var(--navy)}
+.add-school-btn{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:7px 15px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.add-school-btn:hover{background:var(--navy2)}
+.schools-list{display:flex;flex-direction:column;gap:.75rem}
+.school-card{background:var(--white);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.school-card-top{padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem}
+.sbadge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
+.sbadge.dream{background:#fdf6e8;color:#c8922a}.sbadge.reach{background:#faeee9;color:#b85c38}.sbadge.match{background:#e8eff8;color:#2d5a8e}.sbadge.safety{background:#e8f5ee;color:#2d6a4f}
+.school-name-wrap{flex:1}
+.school-name{font-weight:500;font-size:.87rem}
+.school-loc{font-size:.69rem;color:var(--text3);margin-top:1px}
+.sstatus-sel{font-size:11px;padding:3px 7px;border:1px solid var(--border2);border-radius:20px;background:var(--cream);color:var(--text2);outline:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.sdel{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px}
+.sdel:hover{color:var(--danger)}
+.school-card-data{padding:0 1rem .85rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+.school-stat-box{background:var(--cream);border-radius:7px;padding:.5rem .6rem}
+.school-stat-val{font-size:.88rem;font-weight:500;color:var(--text)}
+.school-stat-lbl{font-size:.64rem;color:var(--text3);margin-top:1px;text-transform:uppercase;letter-spacing:.04em}
+.school-card-extra{padding:.5rem 1rem .85rem;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.school-info-row{font-size:.75rem;color:var(--text2);line-height:1.5}
+.school-info-row strong{color:var(--text);font-weight:500}
+.school-card-footer{padding:.6rem 1rem;border-top:1px solid var(--border);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.btn-sm{padding:4px 11px;border-radius:6px;font-size:11.5px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid var(--border2);background:var(--cream);color:var(--text2);transition:all .15s}
+.btn-sm:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-sm.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-sm.gold{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.btn-sm.gold:hover{background:var(--gold2)}
+.chances-result{margin:.5rem 1rem .75rem;padding:.7rem .85rem;background:var(--cream);border-radius:8px;font-size:12px;line-height:1.6;color:var(--text2);display:none}
+.chances-result.show{display:block}
+.chances-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;margin-bottom:.4rem}
+.cb-likely{background:#e8f5ee;color:#2d6a4f}.cb-possible{background:#e8eff8;color:#2d5a8e}.cb-reach{background:#fdf6e8;color:#c8922a}.cb-longshot{background:#faeee9;color:#b85c38}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text3)}
+.empty-icon{font-size:1.8rem;margin-bottom:.6rem}
+.empty p{font-size:.8rem}
+
+/* COMPARE */
+#page-compare .compare-body{padding:1.3rem 1.8rem;flex:1;overflow-y:auto}
+.compare-select-row{background:var(--white);border:1px solid var(--border2);border-radius:12px;padding:1.1rem;margin-bottom:1.1rem;box-shadow:var(--shadow)}
+.compare-select-row h3{font-size:.79rem;font-family:'DM Sans',sans-serif;font-weight:500;margin-bottom:.7rem}
+.compare-chips{display:flex;gap:.5rem;flex-wrap:wrap}
+.compare-chip{padding:5px 12px;border:1.5px solid var(--border2);border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--text2);background:var(--cream)}
+.compare-chip:hover{border-color:var(--navy);color:var(--navy)}
+.compare-chip.selected{background:var(--navy);color:#fff;border-color:var(--navy)}
+.compare-table-wrap{background:var(--white);border:1px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.compare-table{width:100%;border-collapse:collapse}
+.compare-table th{background:var(--cream);padding:.7rem 1rem;font-size:.72rem;text-align:left;font-weight:500;color:var(--text2);border-bottom:1px solid var(--border2)}
+.compare-table th.school-col{text-align:center;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:500;color:var(--text)}
+.compare-table td{padding:.65rem 1rem;font-size:.82rem;border-bottom:1px solid var(--border);text-align:center}
+.compare-table td.metric-label{text-align:left;color:var(--text3);font-size:.77rem;white-space:nowrap}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-best{font-weight:500;color:var(--navy)}
+.compare-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+
+/* MAP */
+#page-map{background:var(--cream)}
+#page-map .map-body{padding:1rem 1.5rem;flex:1;display:flex;flex-direction:column;gap:.85rem;overflow:hidden}
+.map-legend{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;flex-shrink:0}
+.map-legend-item{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ld-dream{background:#c8922a}.ld-reach{background:#b85c38}.ld-match{background:#2d5a8e}.ld-safety{background:#2d6a4f}
+#map-container{flex:1;border-radius:12px;border:1px solid var(--border2);overflow:hidden;min-height:400px}
+
+/* PROFILE */
+#page-profile .profile-body{padding:1.3rem 1.8rem;flex:1;overflow-y:auto}
+.fill-card{background:var(--navy);border-radius:13px;padding:1.2rem;margin-bottom:1.2rem}
+.fill-card h3{font-size:.92rem;color:#fff;margin-bottom:.3rem}
+.fill-card p{font-size:.75rem;color:rgba(255,255,255,.45);margin-bottom:.85rem;line-height:1.6}
+.fill-upload-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fill-upload-btn{position:relative;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;overflow:hidden}
+.fill-upload-btn:hover{background:rgba(255,255,255,.16)}
+.fill-upload-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.fill-status{font-size:12px;color:rgba(255,255,255,.45)}.fill-status.ok{color:var(--gold2)}.fill-status.err{color:#f87171}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:.95rem;margin-bottom:.95rem}
+.pcard{background:var(--white);border:1px solid var(--border2);border-radius:13px;padding:1.1rem;box-shadow:var(--shadow)}
+.pcard h3{font-size:.73rem;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem;padding-bottom:.45rem;border-bottom:1px solid var(--border)}
+.pfield{margin-bottom:.65rem}
+.pfield label{display:block;font-size:.68rem;color:var(--text3);margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.pfield input,.pfield select,.pfield textarea{width:100%;padding:6px 9px;border:1px solid var(--border2);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--text);background:var(--cream);outline:none;transition:border-color .2s}
+.pfield input:focus,.pfield select:focus,.pfield textarea:focus{border-color:var(--navy);background:var(--white)}
+.pfield textarea{resize:none;height:58px;line-height:1.5}
+.save-profile-btn{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.save-profile-btn:hover{background:var(--navy2)}
+.saved-flash{font-size:12px;color:var(--success);margin-left:9px;opacity:0;transition:opacity .3s}
+
+/* CHECKLIST */
+#page-checklist .checklist-body{padding:1.3rem 1.8rem;flex:1;overflow-y:auto}
+.cl-phase{background:var(--white);border:1px solid var(--border2);border-radius:13px;margin-bottom:.95rem;overflow:hidden;box-shadow:var(--shadow)}
+.cl-phase-hdr{padding:.75rem 1.1rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.cl-phase-hdr h3{font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;flex:1}
+.cl-phase-badge{font-size:10.5px;color:var(--text3)}
+.cl-items{padding:.3rem 0}
+.cl-row{display:flex;align-items:center;gap:8px;padding:.45rem 1.1rem;cursor:pointer;transition:background .15s}
+.cl-row:hover{background:var(--cream)}
+.cl-check{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.cl-row.done .cl-check{background:#2d6a4f;border-color:#2d6a4f;color:#fff;font-size:9px}
+.cl-row.done .cl-text{text-decoration:line-through;color:var(--text3)}
+.cl-text{font-size:.78rem;color:var(--text2);flex:1}
+.cl-tag{font-size:9px;padding:2px 6px;border-radius:9px;background:var(--cream2);color:var(--text3);white-space:nowrap}
+.cl-urg{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.cl-urg.high{background:var(--danger)}.cl-urg.med{background:var(--warn)}.cl-urg.low{background:#2d6a4f}
+.add-task-row{display:flex;gap:6px;padding:.55rem 1.1rem;border-top:1px solid var(--border)}
+.add-task-row input{flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11.5px;color:var(--text);background:var(--cream);outline:none}
+.add-task-row input:focus{border-color:var(--navy)}
+.add-task-row button{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 11px;font-size:11.5px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="sb-logo"><div class="sb-mark">C</div><div class="sb-title">Compass <span>AI</span></div></div>
+  <nav class="sb-nav">
+    <div class="nav-lbl">Main</div>
+    <div class="nav-item active" data-page="home" onclick="goTo('home',this)"><span class="nav-icon">⌂</span>Home</div>
+    <div class="nav-item" data-page="advisor" onclick="goTo('advisor',this)"><span class="nav-icon">◎</span>AI Advisor</div>
+    <div class="nav-item" data-page="docs" onclick="goTo('docs',this)"><span class="nav-icon">⊙</span>Document Analysis</div>
+    <div class="nav-lbl" style="margin-top:.35rem">Colleges</div>
+    <div class="nav-item" data-page="schools" onclick="goTo('schools',this)"><span class="nav-icon">◈</span>School Tracker</div>
+    <div class="nav-item" data-page="compare" onclick="goTo('compare',this)"><span class="nav-icon">⊞</span>Compare Schools</div>
+    <div class="nav-item" data-page="map" onclick="goTo('map',this)"><span class="nav-icon">◉</span>College Map</div>
+    <div class="nav-lbl" style="margin-top:.35rem">Planning</div>
+    <div class="nav-item" data-page="checklist" onclick="goTo('checklist',this)"><span class="nav-icon">✓</span>Checklist</div>
+    <div class="nav-lbl" style="margin-top:.35rem">Account</div>
+    <div class="nav-item" data-page="profile" onclick="goTo('profile',this)"><span class="nav-icon">◐</span>My Profile</div>
+  </nav>
+  <div class="sb-bottom">
+    <div class="api-row"><label>Groq Key</label><input type="password" class="api-inp" id="groq-key" placeholder="gsk_..." autocomplete="off"><button class="save-k" onclick="saveKey()">Save</button></div>
+    <div class="sb-note">Text: Llama 3.3 70B · Vision: Llama 4 Scout<br>Free key → console.groq.com</div>
+  </div>
+</aside>
+
+<div class="pages">
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="home-hero">
+    <div class="hero-eye">Your college journey starts here</div>
+    <h1>Welcome to <em>Compass</em></h1>
+    <p>AI-powered college admissions guidance — personalized, data-driven, from first search to final decision.</p>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val" id="h-schools">0</div><div class="hstat-lbl">Schools tracked</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-tasks">0</div><div class="hstat-lbl">Tasks done</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-docs">0</div><div class="hstat-lbl">Docs analyzed</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-msgs">0</div><div class="hstat-lbl">Advisor chats</div></div>
+    </div>
+  </div>
+  <div class="home-body">
+    <div class="section-title">Quick access</div>
+    <div class="home-grid">
+      <div class="hcard" onclick="goTo('advisor',document.querySelector('[data-page=advisor]'))"><div class="hcard-icon">◎</div><h3>AI Advisor Chat</h3><p>Ask anything — school matching, essays, financial aid, deadlines. Powered by Llama 3.3 70B and tailored to your profile.</p><div class="hcard-arr">→</div></div>
+      <div class="hcard" onclick="goTo('schools',document.querySelector('[data-page=schools]'))"><div class="hcard-icon">◈</div><h3>School Tracker</h3><p>Search from 70+ colleges with real acceptance rates, GPA averages, tuition, and deadlines. Type a name to autocomplete.</p><div class="hcard-arr">→</div></div>
+      <div class="hcard" onclick="goTo('compare',document.querySelector('[data-page=compare]'))"><div class="hcard-icon">⊞</div><h3>Compare Schools</h3><p>Put up to 3 of your tracked schools side-by-side and compare every stat — acceptance, tuition, aid, deadlines, and more.</p><div class="hcard-arr">→</div></div>
+      <div class="hcard" onclick="goTo('map',document.querySelector('[data-page=map]'))"><div class="hcard-icon">◉</div><h3>College Map</h3><p>See all your tracked schools pinned on a US map, color-coded by dream, reach, match, and safety. Click for details.</p><div class="hcard-arr">→</div></div>
+    </div>
+    <div class="home-bottom"><h3>Upcoming checklist tasks</h3><div id="home-cl-prev"></div></div>
+  </div>
+</div>
+
+<!-- ADVISOR -->
+<div id="page-advisor" class="page">
+  <div class="chat-shell">
+    <div class="chat-top">
+      <div class="chat-av">C</div>
+      <div><h2>AI Advisor <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:4px;">Llama 3.3 70B</span></h2><p><span class="live-dot"></span>Personalized to your profile · Ask me anything</p></div>
+    </div>
+    <div class="topics">
+      <div class="chip" onclick="sendAdvisor('Analyze my chances at each school in my tracker')">Analyze my school list</div>
+      <div class="chip" onclick="sendAdvisor('What schools should I apply to based on my profile?')">School matching</div>
+      <div class="chip" onclick="sendAdvisor('How do I write a strong Common App personal statement?')">Essay coaching</div>
+      <div class="chip" onclick="sendAdvisor('What can I do right now to strengthen my application?')">Improve my app</div>
+      <div class="chip" onclick="sendAdvisor('Explain FAFSA, CSS Profile, and financial aid')">Financial aid</div>
+      <div class="chip" onclick="sendAdvisor('Walk me through application timeline and key deadlines')">Deadlines</div>
+      <div class="chip" onclick="sendAdvisor('What is the difference between ED, EA, and Regular Decision?')">ED vs EA vs RD</div>
+    </div>
+    <div id="chat-msgs">
+      <div class="msg assistant"><div class="msg-av">C</div><div class="msg-bbl"><p>Hi! I'm your Compass advisor. Fill in your profile and add schools to your tracker — then hit "Analyze my school list" above for personalized chances at every school you're considering!</p></div></div>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="advisor-input" placeholder="Ask anything about college admissions..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="adv-send" onclick="sendAdvisor()">Send ↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENTS -->
+<div id="page-docs" class="page">
+  <div class="page-hdr"><h2>Document Analysis</h2><p>Upload any file for detailed AI feedback tailored to college admissions</p></div>
+  <div class="docs-body">
+    <div class="model-pills"><span class="mpill vis">Images → Llama 4 Scout Vision</span><span class="mpill txt">PDFs &amp; Text → Llama 3.3 70B</span></div>
+    <div class="drop-zone" id="drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+      <input type="file" id="doc-file-input" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" onchange="loadDocFile(this.files[0])">
+      <div class="drop-icon">⊙</div><h3>Drop a file here or click to browse</h3><p>PNG, JPG, WEBP · PDF, TXT</p>
+    </div>
+    <div class="section-title" style="font-size:.69rem;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);margin-bottom:.65rem;font-weight:500">Analysis type</div>
+    <div class="atypes">
+      <div class="atype sel" onclick="pickType(this,'essay')"><div class="atype-ico">✍</div><div><span class="atype-lbl">Essay Review</span><span class="atype-desc">Hook, voice, structure, impact</span></div></div>
+      <div class="atype" onclick="pickType(this,'transcript')"><div class="atype-ico">📋</div><div><span class="atype-lbl">Transcript Analysis</span><span class="atype-desc">GPA trends, rigor, strength</span></div></div>
+      <div class="atype" onclick="pickType(this,'recletter')"><div class="atype-ico">✉</div><div><span class="atype-lbl">Rec Letter Review</span><span class="atype-desc">Strength, specificity, tone</span></div></div>
+      <div class="atype" onclick="pickType(this,'fit')"><div class="atype-ico">◈</div><div><span class="atype-lbl">School Fit Check</span><span class="atype-desc">Fit for your target schools</span></div></div>
+      <div class="atype" onclick="pickType(this,'resume')"><div class="atype-ico">◐</div><div><span class="atype-lbl">Activities / Resume</span><span class="atype-desc">Impact, leadership, narrative</span></div></div>
+      <div class="atype" onclick="pickType(this,'general')"><div class="atype-ico">⊙</div><div><span class="atype-lbl">General Analysis</span><span class="atype-desc">Open-ended admissions feedback</span></div></div>
+    </div>
+    <div id="doc-prev-section" style="display:none">
+      <div class="doc-prev">
+        <div class="doc-prev-hdr"><div class="doc-fname"><span id="doc-filename">file</span><span id="doc-fbadge" class="fbadge txt">TXT</span></div><button class="sdel" onclick="clearDoc()">✕</button></div>
+        <img id="doc-thumb" alt="preview"><div id="doc-text-prev"></div>
+        <div id="doc-status" class="status-bar"></div>
+        <button class="analyze-btn" id="analyze-btn" onclick="analyzeDoc()">⊙ Analyze document</button>
+      </div>
+    </div>
+    <div id="doc-result" style="display:none;margin-top:.85rem"><div class="result-card"><h3>Analysis result <span id="result-model" style="font-size:11px;font-family:'DM Sans',sans-serif;font-weight:400;color:var(--text3)"></span></h3><div class="result-content" id="result-content"></div></div></div>
+  </div>
+</div>
+
+<!-- SCHOOLS -->
+<div id="page-schools" class="page">
+  <div class="page-hdr"><h2>School Tracker</h2><p>Search from 70+ colleges with real data — acceptance rates, GPA averages, tuition, and deadlines auto-filled</p></div>
+  <div class="schools-body">
+    <div class="school-stats">
+      <div class="sstat"><div class="sstat-num" id="ss-dream">0</div><div class="sstat-lbl">Dream</div></div>
+      <div class="sstat"><div class="sstat-num" id="ss-reach">0</div><div class="sstat-lbl">Reach</div></div>
+      <div class="sstat"><div class="sstat-num" id="ss-match">0</div><div class="sstat-lbl">Match</div></div>
+      <div class="sstat"><div class="sstat-num" id="ss-safety">0</div><div class="sstat-lbl">Safety</div></div>
+    </div>
+    <div class="add-school-form">
+      <h3>Add a school — start typing to search</h3>
+      <div class="school-form-row">
+        <div class="ac-wrap">
+          <input type="text" id="sc-name" placeholder="e.g. University of Texas..." autocomplete="off" oninput="showAC(this.value)" onblur="setTimeout(()=>hideAC(),200)">
+          <div class="ac-list" id="ac-list"></div>
+        </div>
+        <select id="sc-type"><option value="dream">Dream</option><option value="reach">Reach</option><option value="match" selected>Match</option><option value="safety">Safety</option></select>
+        <select id="sc-status"><option value="researching">Researching</option><option value="applying">Applying</option><option value="applied">Applied</option><option value="accepted">Accepted</option><option value="waitlisted">Waitlisted</option><option value="rejected">Rejected</option></select>
+        <input type="text" id="sc-major" placeholder="Major interest (optional)">
+      </div>
+      <button class="add-school-btn" onclick="addSchool()">+ Add to list</button>
+      <span style="font-size:11px;color:var(--text3);margin-left:10px">Category auto-suggested based on your GPA &amp; test scores</span>
+    </div>
+    <div id="schools-list"></div>
+  </div>
+</div>
+
+<!-- COMPARE -->
+<div id="page-compare" class="page">
+  <div class="page-hdr"><h2>Compare Schools</h2><p>Select up to 3 schools from your tracker for a side-by-side comparison</p></div>
+  <div class="compare-body">
+    <div class="compare-select-row">
+      <h3>Select schools to compare</h3>
+      <div class="compare-chips" id="compare-chips"><p style="font-size:.8rem;color:var(--text3)">Add schools to your tracker first, then they'll appear here.</p></div>
+    </div>
+    <div id="compare-content"></div>
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="page-map" class="page">
+  <div class="page-hdr"><h2>College Map</h2><p>Your tracked schools pinned on the map — color-coded by category</p></div>
+  <div class="map-body">
+    <div class="map-legend">
+      <span style="font-size:.72rem;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Legend:</span>
+      <div class="map-legend-item"><div class="legend-dot ld-dream"></div>Dream</div>
+      <div class="map-legend-item"><div class="legend-dot ld-reach"></div>Reach</div>
+      <div class="map-legend-item"><div class="legend-dot ld-match"></div>Match</div>
+      <div class="map-legend-item"><div class="legend-dot ld-safety"></div>Safety</div>
+      <span style="font-size:.72rem;color:var(--text3);margin-left:.5rem">Click a pin for school details</span>
+    </div>
+    <div id="map-container"></div>
+  </div>
+</div>
+
+<!-- CHECKLIST -->
+<div id="page-checklist" class="page">
+  <div class="page-hdr"><h2>Application Checklist</h2><p>Stay organized — check off tasks as you complete them</p></div>
+  <div class="checklist-body" id="checklist-body"></div>
+</div>
+
+<!-- PROFILE -->
+<div id="page-profile" class="page">
+  <div class="page-hdr"><h2>My Profile</h2><p>Fill in manually or upload a document for AI auto-fill</p></div>
+  <div class="profile-body">
+    <div class="fill-card">
+      <h3>Auto-fill from document</h3>
+      <p>Upload a transcript, report card, test scores, or resume and AI will extract your info and populate the fields below automatically.</p>
+      <div class="fill-upload-row"><label class="fill-upload-btn"><input type="file" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" onchange="autoFillProfile(this.files[0])">⊙ Upload document to auto-fill</label><span class="fill-status" id="fill-status"></span></div>
+    </div>
+    <div class="profile-grid">
+      <div class="pcard"><h3>Personal info</h3>
+        <div class="pfield"><label>First name</label><input type="text" id="pp-name" placeholder="e.g. Alex"></div>
+        <div class="pfield"><label>Current grade</label><select id="pp-grade"><option value="">Select...</option><option>9th grade (Freshman)</option><option>10th grade (Sophomore)</option><option>11th grade (Junior)</option><option>12th grade (Senior)</option><option>Gap year</option></select></div>
+        <div class="pfield"><label>State</label><input type="text" id="pp-state" placeholder="e.g. Texas"></div>
+        <div class="pfield"><label>High school</label><input type="text" id="pp-school" placeholder="e.g. Central High School"></div>
+      </div>
+      <div class="pcard"><h3>Academics</h3>
+        <div class="pfield"><label>Unweighted GPA (/ 4.0)</label><input type="text" id="pp-gpa" placeholder="e.g. 3.7"></div>
+        <div class="pfield"><label>Weighted GPA</label><input type="text" id="pp-wgpa" placeholder="e.g. 4.2"></div>
+        <div class="pfield"><label>SAT / ACT score</label><input type="text" id="pp-test" placeholder="e.g. SAT 1350 or ACT 29"></div>
+        <div class="pfield"><label>AP / IB / Honors courses</label><input type="text" id="pp-ap" placeholder="e.g. AP Calc, AP Bio"></div>
+      </div>
+      <div class="pcard"><h3>Goals &amp; interests</h3>
+        <div class="pfield"><label>Intended major</label><input type="text" id="pp-major" placeholder="e.g. Computer Science"></div>
+        <div class="pfield"><label>Career interests</label><input type="text" id="pp-career" placeholder="e.g. Software engineer"></div>
+        <div class="pfield"><label>Extracurriculars</label><textarea id="pp-ecs" placeholder="Sports, clubs, jobs, volunteering..."></textarea></div>
+        <div class="pfield"><label>Awards &amp; honors</label><textarea id="pp-awards" placeholder="National Merit, state awards..."></textarea></div>
+      </div>
+      <div class="pcard"><h3>Preferences &amp; finances</h3>
+        <div class="pfield"><label>School preferences</label><select id="pp-pref"><option value="">No preference</option><option>Large state university</option><option>Small liberal arts college</option><option>Urban campus</option><option>Rural / suburban campus</option></select></div>
+        <div class="pfield"><label>Financial situation</label><select id="pp-budget"><option value="">Prefer not to say</option><option>Need full financial aid</option><option>Need partial aid / scholarships</option><option>Budget is flexible</option><option>Cost is not a concern</option></select></div>
+        <div class="pfield"><label>Additional notes</label><textarea id="pp-notes" placeholder="Anything else the advisor should know..."></textarea></div>
+      </div>
+    </div>
+    <button class="save-profile-btn" onclick="saveProfile()">Save profile</button>
+    <span class="saved-flash" id="saved-flash">✓ Saved!</span>
+  </div>
+</div>
+
+</div></div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ── COLLEGE DATABASE ── */
+const COLLEGES=[
+  {name:"Harvard University",city:"Cambridge",state:"MA",type:"Private",size:21,accept:3.4,gpa:3.9,sat:1510,act:34,tuitionIn:59,tuitionOut:59,avgAid:53,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 1",majors:"Economics, Computer Science, Social Sciences, Biology",lat:42.37,lng:-71.11},
+  {name:"Yale University",city:"New Haven",state:"CT",type:"Private",size:14,accept:4.6,gpa:3.95,sat:1500,act:34,tuitionIn:62,tuitionOut:62,avgAid:54,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Political Science, Economics, History, Biology",lat:41.31,lng:-72.92},
+  {name:"Princeton University",city:"Princeton",state:"NJ",type:"Private",size:8,accept:3.9,gpa:3.9,sat:1505,act:35,tuitionIn:57,tuitionOut:57,avgAid:55,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 1",majors:"Economics, Computer Science, Engineering, Politics",lat:40.34,lng:-74.66},
+  {name:"Columbia University",city:"New York",state:"NY",type:"Private",size:31,accept:3.9,gpa:3.9,sat:1505,act:35,tuitionIn:65,tuitionOut:65,avgAid:54,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Political Science, Economics, CS, English",lat:40.81,lng:-73.96},
+  {name:"University of Pennsylvania",city:"Philadelphia",state:"PA",type:"Private",size:22,accept:5.9,gpa:3.9,sat:1500,act:34,tuitionIn:63,tuitionOut:63,avgAid:50,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 5",majors:"Economics, Finance, CS, Nursing, Engineering",lat:39.95,lng:-75.19},
+  {name:"Brown University",city:"Providence",state:"RI",type:"Private",size:10,accept:5.1,gpa:3.9,sat:1505,act:34,tuitionIn:62,tuitionOut:62,avgAid:50,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 3",majors:"Biology, CS, Economics, Public Health, History",lat:41.82,lng:-71.40},
+  {name:"Dartmouth College",city:"Hanover",state:"NH",type:"Private",size:6,accept:6.2,gpa:3.9,sat:1500,act:34,tuitionIn:61,tuitionOut:61,avgAid:50,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Economics, Government, History, Engineering",lat:43.70,lng:-72.29},
+  {name:"Cornell University",city:"Ithaca",state:"NY",type:"Private",size:23,accept:7.3,gpa:3.9,sat:1480,act:34,tuitionIn:61,tuitionOut:61,avgAid:45,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Engineering, Biology, CS, Hotel Admin, Business",lat:42.45,lng:-76.48},
+  {name:"MIT",city:"Cambridge",state:"MA",type:"Private",size:11,accept:3.9,gpa:4.0,sat:1540,act:35,tuitionIn:57,tuitionOut:57,avgAid:50,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 1",majors:"CS, Engineering, Physics, Math, Economics",lat:42.36,lng:-71.09},
+  {name:"Stanford University",city:"Stanford",state:"CA",type:"Private",size:17,accept:3.7,gpa:3.96,sat:1505,act:34,tuitionIn:56,tuitionOut:56,avgAid:50,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 2",majors:"CS, Engineering, Economics, Human Biology, Psychology",lat:37.43,lng:-122.17},
+  {name:"Caltech",city:"Pasadena",state:"CA",type:"Private",size:2,accept:2.9,gpa:4.0,sat:1550,act:36,tuitionIn:58,tuitionOut:58,avgAid:48,edDead:"N/A",eaDead:"N/A",rdDead:"Jan 3",majors:"Engineering, Physics, CS, Chemistry, Math",lat:34.14,lng:-118.13},
+  {name:"Duke University",city:"Durham",state:"NC",type:"Private",size:17,accept:7.2,gpa:3.9,sat:1505,act:34,tuitionIn:61,tuitionOut:61,avgAid:47,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Economics, CS, Biology, Psychology, Public Policy",lat:36.00,lng:-78.94},
+  {name:"Northwestern University",city:"Evanston",state:"IL",type:"Private",size:22,accept:6.8,gpa:3.92,sat:1500,act:34,tuitionIn:60,tuitionOut:60,avgAid:47,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Economics, Journalism, CS, Engineering, Pre-Med",lat:42.05,lng:-87.67},
+  {name:"University of Chicago",city:"Chicago",state:"IL",type:"Private",size:17,accept:5.4,gpa:3.9,sat:1520,act:35,tuitionIn:62,tuitionOut:62,avgAid:48,edDead:"Nov 3",eaDead:"N/A",rdDead:"Jan 2",majors:"Economics, CS, Math, Statistics, Political Science",lat:41.79,lng:-87.60},
+  {name:"Johns Hopkins University",city:"Baltimore",state:"MD",type:"Private",size:27,accept:7.5,gpa:3.9,sat:1510,act:34,tuitionIn:59,tuitionOut:59,avgAid:43,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Biology, CS, Neuroscience, Public Health, Engineering",lat:39.33,lng:-76.62},
+  {name:"Vanderbilt University",city:"Nashville",state:"TN",type:"Private",size:13,accept:7.0,gpa:3.9,sat:1510,act:34,tuitionIn:58,tuitionOut:58,avgAid:45,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Economics, Engineering, Human &amp; Org Dev, Neuroscience",lat:36.14,lng:-86.80},
+  {name:"Rice University",city:"Houston",state:"TX",type:"Private",size:8,accept:8.3,gpa:3.96,sat:1520,act:34,tuitionIn:52,tuitionOut:52,avgAid:43,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"CS, Engineering, Economics, Biochemistry, Psychology",lat:29.72,lng:-95.40},
+  {name:"Notre Dame",city:"Notre Dame",state:"IN",type:"Private",size:13,accept:13.0,gpa:3.9,sat:1490,act:34,tuitionIn:58,tuitionOut:58,avgAid:40,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Finance, CS, Political Science, Engineering, Biology",lat:41.70,lng:-86.24},
+  {name:"Georgetown University",city:"Washington",state:"DC",type:"Private",size:19,accept:15.0,gpa:3.9,sat:1450,act:33,tuitionIn:60,tuitionOut:60,avgAid:35,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 10",majors:"International Relations, Finance, Political Science, CS",lat:38.91,lng:-77.07},
+  {name:"Emory University",city:"Atlanta",state:"GA",type:"Private",size:15,accept:15.0,gpa:3.8,sat:1450,act:33,tuitionIn:56,tuitionOut:56,avgAid:35,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Biology, Business, Pre-Med, Psychology, Economics",lat:33.79,lng:-84.32},
+  {name:"Carnegie Mellon University",city:"Pittsburgh",state:"PA",type:"Private",size:15,accept:10.8,gpa:3.9,sat:1530,act:35,tuitionIn:61,tuitionOut:61,avgAid:35,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 3",majors:"CS, Engineering, Business, Information Systems, Design",lat:40.44,lng:-79.94},
+  {name:"Tufts University",city:"Medford",state:"MA",type:"Private",size:11,accept:11.0,gpa:3.8,sat:1480,act:33,tuitionIn:63,tuitionOut:63,avgAid:30,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"International Relations, Biology, Economics, CS, Psychology",lat:42.41,lng:-71.12},
+  {name:"USC",city:"Los Angeles",state:"CA",type:"Private",size:47,accept:12.0,gpa:3.8,sat:1420,act:33,tuitionIn:62,tuitionOut:62,avgAid:30,edDead:"N/A",eaDead:"N/A",rdDead:"Jan 15",majors:"Business, Cinematic Arts, Engineering, Communications",lat:34.02,lng:-118.29},
+  {name:"Wake Forest University",city:"Winston-Salem",state:"NC",type:"Private",size:8,accept:24.0,gpa:3.8,sat:1380,act:32,tuitionIn:60,tuitionOut:60,avgAid:35,edDead:"Nov 15",eaDead:"N/A",rdDead:"Jan 1",majors:"Business, Biology, Economics, Communications, Psychology",lat:36.13,lng:-80.28},
+  {name:"NYU",city:"New York",state:"NY",type:"Private",size:60,accept:12.0,gpa:3.7,sat:1400,act:32,tuitionIn:56,tuitionOut:56,avgAid:22,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Business, Film, Liberal Arts, CS, Psychology, Art",lat:40.73,lng:-73.99},
+  {name:"Boston University",city:"Boston",state:"MA",type:"Private",size:35,accept:19.0,gpa:3.7,sat:1390,act:32,tuitionIn:60,tuitionOut:60,avgAid:28,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Business, Communications, Engineering, Pre-Med, CS",lat:42.35,lng:-71.10},
+  {name:"Northeastern University",city:"Boston",state:"MA",type:"Private",size:20,accept:7.0,gpa:3.8,sat:1490,act:34,tuitionIn:57,tuitionOut:57,avgAid:26,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Business, CS, Engineering, Health Sciences, Communications",lat:42.34,lng:-71.09},
+  {name:"Tulane University",city:"New Orleans",state:"LA",type:"Private",size:13,accept:13.0,gpa:3.6,sat:1380,act:32,tuitionIn:61,tuitionOut:61,avgAid:30,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 15",majors:"Business, Biology, Public Health, Architecture, Liberal Arts",lat:29.94,lng:-90.12},
+  {name:"WashU St. Louis",city:"St. Louis",state:"MO",type:"Private",size:15,accept:12.0,gpa:3.9,sat:1510,act:34,tuitionIn:57,tuitionOut:57,avgAid:40,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 2",majors:"Business, CS, Biology, Economics, Psychology",lat:38.65,lng:-90.31},
+  {name:"Boston College",city:"Chestnut Hill",state:"MA",type:"Private",size:15,accept:18.0,gpa:3.8,sat:1430,act:33,tuitionIn:59,tuitionOut:59,avgAid:31,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Finance, Marketing, Biology, Economics, CS",lat:42.34,lng:-71.17},
+  {name:"University of Miami",city:"Coral Gables",state:"FL",type:"Private",size:17,accept:27.0,gpa:3.7,sat:1350,act:32,tuitionIn:55,tuitionOut:55,avgAid:25,edDead:"Nov 1",eaDead:"N/A",rdDead:"Feb 1",majors:"Marine Science, Business, CS, Pre-Med, Communications",lat:25.72,lng:-80.28},
+  {name:"Pepperdine University",city:"Malibu",state:"CA",type:"Private",size:9,accept:37.0,gpa:3.7,sat:1320,act:31,tuitionIn:57,tuitionOut:57,avgAid:26,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 15",majors:"Business, Communications, Psychology, Political Science, Law",lat:34.04,lng:-118.69},
+  {name:"Fordham University",city:"New York",state:"NY",type:"Private",size:16,accept:54.0,gpa:3.6,sat:1320,act:31,tuitionIn:55,tuitionOut:55,avgAid:21,edDead:"Nov 1",eaDead:"N/A",rdDead:"Feb 1",majors:"Business, Communications, Political Science, Psychology",lat:40.86,lng:-73.88},
+  {name:"Baylor University",city:"Waco",state:"TX",type:"Private",size:19,accept:62.0,gpa:3.7,sat:1260,act:29,tuitionIn:47,tuitionOut:47,avgAid:20,edDead:"N/A",eaDead:"Nov 1",rdDead:"Feb 1",majors:"Biology, Business, Nursing, Pre-Law, Engineering",lat:31.55,lng:-97.12},
+  {name:"SMU",city:"Dallas",state:"TX",type:"Private",size:12,accept:46.0,gpa:3.6,sat:1330,act:31,tuitionIn:58,tuitionOut:58,avgAid:24,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 15",majors:"Business, Finance, Engineering, Communications, Liberal Arts",lat:32.84,lng:-96.78},
+  {name:"TCU",city:"Fort Worth",state:"TX",type:"Private",size:10,accept:49.0,gpa:3.6,sat:1270,act:29,tuitionIn:52,tuitionOut:52,avgAid:23,edDead:"N/A",eaDead:"Nov 1",rdDead:"Feb 1",majors:"Business, Nursing, Pre-Med, Communications, Education",lat:32.71,lng:-97.36},
+  {name:"Gonzaga University",city:"Spokane",state:"WA",type:"Private",size:9,accept:73.0,gpa:3.6,sat:1260,act:29,tuitionIn:48,tuitionOut:48,avgAid:24,edDead:"N/A",eaDead:"Nov 15",rdDead:"Feb 1",majors:"Business, Nursing, Engineering, Education, Psychology",lat:47.66,lng:-117.40},
+  {name:"Williams College",city:"Williamstown",state:"MA",type:"Private",size:2,accept:9.0,gpa:3.9,sat:1500,act:34,tuitionIn:58,tuitionOut:58,avgAid:50,edDead:"N/A",eaDead:"Nov 15",rdDead:"Jan 1",majors:"Economics, Political Science, Math, Biology, History",lat:42.71,lng:-73.20},
+  {name:"Amherst College",city:"Amherst",state:"MA",type:"Private",size:2,accept:9.0,gpa:3.9,sat:1490,act:34,tuitionIn:62,tuitionOut:62,avgAid:51,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 3",majors:"Economics, Political Science, CS, Biology, Psychology",lat:42.37,lng:-72.52},
+  {name:"Swarthmore College",city:"Swarthmore",state:"PA",type:"Private",size:2,accept:7.0,gpa:3.9,sat:1490,act:34,tuitionIn:55,tuitionOut:55,avgAid:45,edDead:"Nov 15",eaDead:"N/A",rdDead:"Jan 3",majors:"Economics, Political Science, CS, Psychology, Biology",lat:39.90,lng:-75.35},
+  {name:"Wellesley College",city:"Wellesley",state:"MA",type:"Private",size:2,accept:14.0,gpa:3.9,sat:1450,act:33,tuitionIn:56,tuitionOut:56,avgAid:42,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 15",majors:"Economics, CS, Political Science, Psychology, Biology",lat:42.29,lng:-71.31},
+  {name:"Pomona College",city:"Claremont",state:"CA",type:"Private",size:2,accept:7.0,gpa:3.9,sat:1480,act:34,tuitionIn:55,tuitionOut:55,avgAid:44,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 8",majors:"Economics, CS, Neuroscience, Math, Biology",lat:34.10,lng:-117.71},
+  {name:"Middlebury College",city:"Middlebury",state:"VT",type:"Private",size:3,accept:16.0,gpa:3.8,sat:1430,act:33,tuitionIn:56,tuitionOut:56,avgAid:35,edDead:"Nov 1",eaDead:"N/A",rdDead:"Jan 1",majors:"Economics, International Studies, CS, Biology, Environmental Studies",lat:44.01,lng:-73.18},
+  {name:"Colby College",city:"Waterville",state:"ME",type:"Private",size:2,accept:12.0,gpa:3.8,sat:1430,act:33,tuitionIn:58,tuitionOut:58,avgAid:42,edDead:"Nov 15",eaDead:"N/A",rdDead:"Jan 1",majors:"Economics, Biology, CS, Political Science, Psychology",lat:44.56,lng:-69.66},
+  {name:"Carleton College",city:"Northfield",state:"MN",type:"Private",size:2,accept:19.0,gpa:3.8,sat:1450,act:33,tuitionIn:56,tuitionOut:56,avgAid:40,edDead:"N/A",eaDead:"Nov 15",rdDead:"Jan 15",majors:"Economics, CS, Biology, Political Science, Math",lat:44.46,lng:-93.15},
+  {name:"Davidson College",city:"Davidson",state:"NC",type:"Private",size:2,accept:20.0,gpa:3.8,sat:1380,act:32,tuitionIn:55,tuitionOut:55,avgAid:35,edDead:"Nov 15",eaDead:"N/A",rdDead:"Jan 12",majors:"Economics, Biology, Psychology, Political Science, English",lat:35.50,lng:-80.84},
+  {name:"Grinnell College",city:"Grinnell",state:"IA",type:"Private",size:2,accept:14.0,gpa:3.86,sat:1430,act:33,tuitionIn:52,tuitionOut:52,avgAid:35,edDead:"N/A",eaDead:"Nov 15",rdDead:"Jan 15",majors:"Economics, Biology, CS, Political Science, Psychology",lat:41.75,lng:-92.72},
+  {name:"Oberlin College",city:"Oberlin",state:"OH",type:"Private",size:3,accept:33.0,gpa:3.6,sat:1400,act:32,tuitionIn:58,tuitionOut:58,avgAid:30,edDead:"N/A",eaDead:"Nov 15",rdDead:"Jan 15",majors:"Music, English, Politics, Biology, Environmental Studies",lat:41.29,lng:-82.22},
+  {name:"UCLA",city:"Los Angeles",state:"CA",type:"Public",size:46,accept:9.0,gpa:4.18,sat:1330,act:31,tuitionIn:13,tuitionOut:43,avgAid:20,edDead:"N/A",eaDead:"N/A",rdDead:"Nov 30",majors:"CS, Biology, Business Econ, Political Science, Psychology",lat:34.07,lng:-118.44},
+  {name:"UC Berkeley",city:"Berkeley",state:"CA",type:"Public",size:43,accept:11.0,gpa:4.18,sat:1350,act:33,tuitionIn:14,tuitionOut:44,avgAid:19,edDead:"N/A",eaDead:"N/A",rdDead:"Nov 30",majors:"CS, Economics, Political Economy, Electrical Engineering, Biology",lat:37.87,lng:-122.26},
+  {name:"University of Michigan",city:"Ann Arbor",state:"MI",type:"Public",size:47,accept:17.0,gpa:3.9,sat:1400,act:33,tuitionIn:16,tuitionOut:52,avgAid:16,edDead:"N/A",eaDead:"Nov 1",rdDead:"Feb 1",majors:"Engineering, Business, CS, Economics, Political Science",lat:42.28,lng:-83.74},
+  {name:"UVA",city:"Charlottesville",state:"VA",type:"Public",size:24,accept:18.0,gpa:4.2,sat:1380,act:32,tuitionIn:17,tuitionOut:50,avgAid:15,edDead:"N/A",eaDead:"Nov 1",rdDead:"Jan 1",majors:"Commerce, CS, Political Science, Biology, Economics",lat:38.03,lng:-78.51},
+  {name:"UNC Chapel Hill",city:"Chapel Hill",state:"NC",type:"Public",size:30,accept:19.0,gpa:4.3,sat:1340,act:32,tuitionIn:9,tuitionOut:35,avgAid:16,edDead:"N/A",eaDead:"N/A",rdDead:"Jan 15",majors:"Business, Biology, Journalism, Political Science, Psychology",lat:35.91,lng:-79.05},
+  {name:"Georgia Tech",city:"Atlanta",state:"GA",type:"Public",size:44,accept:16.0,gpa:4.1,sat:1440,act:33,tuitionIn:12,tuitionOut:32,avgAid:12,edDead:"N/A",eaDead:"Oct 15",rdDead:"Jan 1",majors:"CS, Industrial Engineering, Mechanical Engineering, Electrical Engineering",lat:33.77,lng:-84.40},
+  {name:"UT Austin",city:"Austin",state:"TX",type:"Public",size:51,accept:29.0,gpa:3.8,sat:1270,act:30,tuitionIn:11,tuitionOut:37,avgAid:11,edDead:"N/A",eaDead:"N/A",rdDead:"Dec 1",majors:"Business, Engineering, CS, Communications, Nursing",lat:30.29,lng:-97.74},
+  {name:"University of Florida",city:"Gainesville",state:"FL",type:"Public",size:57,accept:30.0,gpa:4.2,sat:1330,act:31,tuitionIn:6,tuitionOut:28,avgAid:10,edDead:"N/A",eaDead:"N/A",rdDead:"Nov 1",majors:"Business, Biology, Engineering, CS, Psychology",lat:29.65,lng:-82.35},
+  {name:"University of Wisconsin",city:"Madison",state:"WI",type:"Public",size:47,accept:47.0,gpa:3.8,sat:1390,act:32,tuitionIn:10,tuitionOut:37,avgAid:10,edDead:"N/A",eaDead:"N/A",rdDead:"Feb 1",majors:"Business, Biology, Economics, Engineering, CS",lat:43.08,lng:-89.39},
+  {name:"UIUC",city:"Champaign",state:"IL",type:"Public",size:56,accept:44.0,gpa:3.8,sat:1380,act:32,tuitionIn:15,tuitionOut:33,avgAid:10,edDead:"N/A",eaDead:"Nov 1",rdDead:"Nov 1",majors:"CS, Engineering, Business, Agriculture, Education",lat:40.10,lng:-88.23},
+  {name:"Ohio State University",city:"Columbus",state:"OH",type:"Public",size:66,accept:49.0,gpa:3.8,sat:1310,act:30,tuitionIn:11,tuitionOut:31,avgAid:8,edDead:"N/A",eaDead:"N/A",rdDead:"Feb 1",majors:"Business, Engineering, CS, Psychology, Nursing",lat:40.00,lng:-83.02},
+  {name:"Penn State",city:"University Park",state:"PA",type:"Public",size:84,accept:55.0,gpa:3.6,sat:1290,act:29,tuitionIn:18,tuitionOut:34,avgAid:8,edDead:"N/A",eaDead:"Nov 1",rdDead:"Feb 1",majors:"Business, Engineering, CS, Communications, Education",lat:40.80,lng:-77.86},
+  {name:"Purdue University",city:"West Lafayette",state:"IN",type:"Public",size:50,accept:62.0,gpa:3.7,sat:1300,act:30,tuitionIn:10,tuitionOut:29,avgAid:8,edDead:"N/A",eaDead:"N/A",rdDead:"Feb 1",majors:"Engineering, CS, Agriculture, Business, Aviation",lat:40.43,lng:-86.92},
+  {name:"Texas A&M University",city:"College Station",state:"TX",type:"Public",size:74,accept:63.0,gpa:3.6,sat:1230,act:29,tuitionIn:9,tuitionOut:37,avgAid:7,edDead:"N/A",eaDead:"N/A",rdDead:"Dec 1",majors:"Engineering, Agriculture, Business, Architecture, Nursing",lat:30.62,lng:-96.34},
+  {name:"UW Seattle",city:"Seattle",state:"WA",type:"Public",size:52,accept:49.0,gpa:3.8,sat:1330,act:31,tuitionIn:11,tuitionOut:37,avgAid:12,edDead:"N/A",eaDead:"N/A",rdDead:"Nov 15",majors:"CS, Engineering, Business, Biology, Social Sciences",lat:47.66,lng:-122.31},
+  {name:"Florida State University",city:"Tallahassee",state:"FL",type:"Public",size:45,accept:25.0,gpa:4.0,sat:1250,act:29,tuitionIn:6,tuitionOut:21,avgAid:10,edDead:"N/A",eaDead:"N/A",rdDead:"Dec 1",majors:"Business, Biology, Social Work, Psychology, Communications",lat:30.44,lng:-84.30},
+  {name:"Clemson University",city:"Clemson",state:"SC",type:"Public",size:28,accept:45.0,gpa:4.1,sat:1310,act:31,tuitionIn:15,tuitionOut:38,avgAid:12,edDead:"N/A",eaDead:"Dec 1",rdDead:"May 1",majors:"Engineering, Business, CS, Animal Science, Architecture",lat:34.68,lng:-82.84},
+  {name:"Virginia Tech",city:"Blacksburg",state:"VA",type:"Public",size:37,accept:67.0,gpa:3.9,sat:1290,act:30,tuitionIn:14,tuitionOut:32,avgAid:11,edDead:"N/A",eaDead:"N/A",rdDead:"Jan 15",majors:"Engineering, CS, Business, Architecture, Biology",lat:37.23,lng:-80.42},
+  {name:"NC State University",city:"Raleigh",state:"NC",type:"Public",size:37,accept:45.0,gpa:4.2,sat:1300,act:30,tuitionIn:9,tuitionOut:29,avgAid:10,edDead:"N/A",eaDead:"N/A",rdDead:"Nov 1",majors:"Engineering, CS, Agriculture, Business, Design",lat:35.79,lng:-78.69},
+  {name:"UGA",city:"Athens",state:"GA",type:"Public",size:39,accept:42.0,gpa:4.0,sat:1300,act:30,tuitionIn:10,tuitionOut:29,avgAid:9,edDead:"N/A",eaDead:"Oct 15",rdDead:"Jan 1",majors:"Business, Biology, Journalism, Education, Psychology",lat:33.95,lng:-83.37},
+  {name:"Auburn University",city:"Auburn",state:"AL",type:"Public",size:30,accept:72.0,gpa:3.7,sat:1210,act:27,tuitionIn:11,tuitionOut:30,avgAid:8,edDead:"N/A",eaDead:"N/A",rdDead:"Feb 1",majors:"Engineering, Business, Agriculture, Architecture, CS",lat:32.60,lng:-85.49},
+  {name:"University of Alabama",city:"Tuscaloosa",state:"AL",type:"Public",size:37,accept:79.0,gpa:3.6,sat:1190,act:26,tuitionIn:11,tuitionOut:28,avgAid:10,edDead:"N/A",eaDead:"N/A",rdDead:"Feb 1",majors:"Business, Engineering, Communications, Nursing, Education",lat:33.21,lng:-87.54},
+  {name:"Arizona State University",city:"Tempe",state:"AZ",type:"Public",size:83,accept:87.0,gpa:3.5,sat:1200,act:27,tuitionIn:11,tuitionOut:28,avgAid:8,edDead:"N/A",eaDead:"N/A",rdDead:"Feb 1",majors:"Business, Engineering, CS, Psychology, Education",lat:33.42,lng:-111.93},
+  {name:"Colorado Boulder",city:"Boulder",state:"CO",type:"Public",size:37,accept:84.0,gpa:3.5,sat:1210,act:27,tuitionIn:11,tuitionOut:34,avgAid:9,edDead:"N/A",eaDead:"N/A",rdDead:"Jan 15",majors:"Business, Engineering, CS, Environmental Studies, Psychology",lat:40.01,lng:-105.27},
+  {name:"Rutgers University",city:"New Brunswick",state:"NJ",type:"Public",size:69,accept:66.0,gpa:3.6,sat:1280,act:29,tuitionIn:15,tuitionOut:32,avgAid:12,edDead:"N/A",eaDead:"N/A",rdDead:"Dec 1",majors:"Engineering, Business, Biology, CS, Political Science",lat:40.50,lng:-74.45},
+  {name:"San Diego State University",city:"San Diego",state:"CA",type:"Public",size:36,accept:34.0,gpa:3.7,sat:1180,act:27,tuitionIn:8,tuitionOut:20,avgAid:8,edDead:"N/A",eaDead:"N/A",rdDead:"Nov 30",majors:"Business, Engineering, CS, Nursing, Communications",lat:32.78,lng:-117.07}
+];
+
+/* ── STATE ── */
+let S={profile:{},schools:[],checklist:null,advHistory:[],docCount:0,msgCount:0};
+let leafletMap=null,mapMarkers=[];
+let compareSelected=[];
+let selectedCollege=null;
+
+function loadState(){try{const r=localStorage.getItem('compass-v4');if(r)S={...S,...JSON.parse(r)};}catch(e){}const k=localStorage.getItem('compass-key');if(k)document.getElementById('groq-key').value=k;}
+function saveState(){localStorage.setItem('compass-v4',JSON.stringify(S));}
+function getKey(){return document.getElementById('groq-key').value.trim()||localStorage.getItem('compass-key')||'';}
+function saveKey(){const k=getKey();if(k){localStorage.setItem('compass-key',k);const b=document.querySelector('.save-k');b.textContent='✓';setTimeout(()=>b.textContent='Save',1500);}}
+
+function goTo(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el)el.classList.add('active');
+  if(page==='home')refreshHome();
+  if(page==='checklist')renderChecklist();
+  if(page==='schools')renderSchools();
+  if(page==='compare')renderCompare();
+  if(page==='map'){setTimeout(initMap,100);}
+}
+
+/* ── GROQ API ── */
+async function callGroq(messages,system,model='llama-3.3-70b-versatile'){
+  const key=getKey();
+  if(!key)throw new Error('No Groq API key — enter it in the sidebar. Get one free at console.groq.com');
+  const msgs=system?[{role:'system',content:system},...messages]:messages;
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:msgs,max_tokens:1400})});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error((e.error&&e.error.message)||'HTTP '+r.status);}
+  const d=await r.json();if(d.error)throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+
+async function callGroqVision(b64,mime,prompt){
+  const key=getKey();if(!key)throw new Error('No Groq API key.');
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'meta-llama/llama-4-scout-17b-16e-preview',max_tokens:1400,messages:[{role:'user',content:[{type:'image_url',image_url:{url:'data:'+mime+';base64,'+b64}},{type:'text',text:prompt}]}]})});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error((e.error&&e.error.message)||'HTTP '+r.status);}
+  const d=await r.json();if(d.error)throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+
+/* ── AUTOCOMPLETE ── */
+function showAC(val){
+  const list=document.getElementById('ac-list');
+  if(!val||val.length<2){list.style.display='none';return;}
+  const matches=COLLEGES.filter(c=>c.name.toLowerCase().includes(val.toLowerCase())).slice(0,8);
+  if(!matches.length){list.style.display='none';return;}
+  list.innerHTML=matches.map(c=>`<div class="ac-item" onmousedown="selectCollege('${c.name.replace(/'/g,"\\'")}')"><span>${highlightMatch(c.name,val)}</span><span class="ac-meta">${c.city}, ${c.state} · ${c.accept}% admit</span></div>`).join('');
+  list.style.display='block';
+}
+function hideAC(){document.getElementById('ac-list').style.display='none';}
+function highlightMatch(text,val){const i=text.toLowerCase().indexOf(val.toLowerCase());if(i<0)return text;return text.slice(0,i)+'<strong>'+text.slice(i,i+val.length)+'</strong>'+text.slice(i+val.length);}
+
+function selectCollege(name){
+  selectedCollege=COLLEGES.find(c=>c.name===name);
+  document.getElementById('sc-name').value=name;
+  document.getElementById('ac-list').style.display='none';
+  if(selectedCollege){
+    const type=suggestType(selectedCollege);
+    document.getElementById('sc-type').value=type;
+  }
+}
+
+function suggestType(col){
+  const userGpa=parseFloat(S.profile['pp-gpa'])||0;
+  const userSat=parseSAT(S.profile['pp-test'])||0;
+  if(!userGpa&&!userSat)return 'match';
+  let score=0;
+  if(userGpa){const d=userGpa-col.gpa;score+=d>=0.2?2:d>=0?1:d>=-0.2?-1:-2;}
+  if(userSat){const d=userSat-col.sat;score+=d>=100?2:d>=0?1:d>=-100?-1:-2;}
+  if(col.accept<8)score-=1;if(col.accept>50)score+=1;
+  return score>=3?'safety':score>=1?'match':score>=-1?'reach':'dream';
+}
+
+function parseSAT(str){
+  if(!str)return 0;
+  const m=str.match(/sat[^0-9]*([0-9]{3,4})/i);if(m)return parseInt(m[1]);
+  const m2=str.match(/([0-9]{3,4})/);if(m2){const v=parseInt(m2[1]);if(v>=400&&v<=1600)return v;}
+  return 0;
+}
+
+/* ── SCHOOL TRACKER ── */
+function addSchool(){
+  const name=document.getElementById('sc-name').value.trim();if(!name)return;
+  const col=selectedCollege||COLLEGES.find(c=>c.name.toLowerCase()===name.toLowerCase());
+  S.schools.push({id:Date.now(),name:col?col.name:name,type:document.getElementById('sc-type').value,status:document.getElementById('sc-status').value,major:document.getElementById('sc-major').value.trim(),colData:col||null,aiChances:null,showChances:false});
+  document.getElementById('sc-name').value='';document.getElementById('sc-major').value='';
+  selectedCollege=null;saveState();renderSchools();renderCompare();refreshHomeStats();
+}
+
+function deleteSchool(id){S.schools=S.schools.filter(s=>s.id!==id);saveState();renderSchools();renderCompare();refreshHomeStats();if(leafletMap)refreshMapMarkers();}
+function updateSchoolStatus(id,v){const s=S.schools.find(s=>s.id===id);if(s){s.status=v;saveState();}}
+
+function renderSchools(){
+  const list=document.getElementById('schools-list');
+  const c={dream:0,reach:0,match:0,safety:0};
+  S.schools.forEach(s=>{if(c[s.type]!==undefined)c[s.type]++;});
+  ['dream','reach','match','safety'].forEach(t=>document.getElementById('ss-'+t).textContent=c[t]);
+  if(!S.schools.length){list.innerHTML='<div class="empty"><div class="empty-icon">◈</div><p>No schools yet. Start typing a name above — college data fills in automatically!</p></div>';return;}
+  list.innerHTML=S.schools.map(s=>{
+    const d=s.colData;
+    const tuition=d?(d.type==='Public'?`$${d.tuitionIn}k in / $${d.tuitionOut}k out`:`$${d.tuitionIn}k/yr`):'—';
+    const location=d?`${d.city}, ${d.state} · ${d.type} · ${d.size?d.size+'k':'?'} students`:'';
+    return `<div class="school-card">
+      <div class="school-card-top">
+        <span class="sbadge ${s.type}">${s.type}</span>
+        <div class="school-name-wrap"><div class="school-name">${s.name}${s.major?` <span style="font-weight:400;font-size:.75rem;color:var(--text3)">· ${s.major}</span>`:''}${d?` <span style="font-size:10px;background:var(--cream2);padding:1px 6px;border-radius:9px;color:var(--text3);margin-left:4px">${d.type}</span>`:''}</div><div class="school-loc">${location}</div></div>
+        <select class="sstatus-sel" onchange="updateSchoolStatus(${s.id},this.value)">${['researching','applying','applied','accepted','waitlisted','rejected'].map(v=>`<option value="${v}"${s.status===v?' selected':''}>${v.charAt(0).toUpperCase()+v.slice(1)}</option>`).join('')}</select>
+        <button class="sdel" onclick="deleteSchool(${s.id})">✕</button>
+      </div>
+      ${d?`<div class="school-card-data">
+        <div class="school-stat-box"><div class="school-stat-val">${d.accept}%</div><div class="school-stat-lbl">Acceptance rate</div></div>
+        <div class="school-stat-box"><div class="school-stat-val">${d.gpa}</div><div class="school-stat-lbl">Avg GPA</div></div>
+        <div class="school-stat-box"><div class="school-stat-val">${d.sat}</div><div class="school-stat-lbl">Avg SAT</div></div>
+        <div class="school-stat-box"><div class="school-stat-val">${d.act}</div><div class="school-stat-lbl">Avg ACT</div></div>
+      </div>
+      <div class="school-card-extra">
+        <div><div class="school-info-row"><strong>Tuition:</strong> ${tuition}</div><div class="school-info-row"><strong>Avg Aid:</strong> $${d.avgAid}k/yr</div></div>
+        <div><div class="school-info-row"><strong>EA Deadline:</strong> ${d.eaDead}</div><div class="school-info-row"><strong>ED Deadline:</strong> ${d.edDead}</div><div class="school-info-row"><strong>RD Deadline:</strong> ${d.rdDead}</div></div>
+        <div style="grid-column:1/-1"><div class="school-info-row"><strong>Popular majors:</strong> ${d.majors}</div></div>
+      </div>`:''}
+      <div class="school-card-footer">
+        ${d?`<button class="btn-sm gold" onclick="analyzeChances(${s.id})">⊙ AI Chances</button>`:''}
+        <button class="btn-sm ${compareSelected.includes(s.id)?'active':''}" onclick="toggleCompare(${s.id})">${compareSelected.includes(s.id)?'✓ In compare':'+ Compare'}</button>
+        ${d?`<button class="btn-sm" onclick="sendAdvisor('Tell me more about ${s.name} — what should I know about applying there?')">Ask advisor →</button>`:''}
+      </div>
+      <div class="chances-result${s.showChances?' show':''}" id="chances-${s.id}">${s.aiChances?md(s.aiChances):''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function analyzeChances(id){
+  const school=S.schools.find(s=>s.id===id);if(!school||!school.colData)return;
+  const el=document.getElementById('chances-'+id);
+  school.showChances=true;el.className='chances-result show';
+  el.innerHTML='<span style="color:var(--text3);font-size:12px">Analyzing your chances...</span>';
+  const d=school.colData;
+  const p=S.profile;
+  const prompt=`You are a college admissions expert. Assess this student's admission chances at ${school.name}.
+
+School data: ${d.accept}% acceptance rate, avg admitted GPA ${d.gpa}, avg SAT ${d.sat}, avg ACT ${d.act}, ${d.type} university in ${d.city}, ${d.state}.
+
+Student profile:
+${p['pp-gpa']?'GPA: '+p['pp-gpa']:''}${p['pp-wgpa']?' (weighted: '+p['pp-wgpa']+')':''}
+${p['pp-test']?'Test scores: '+p['pp-test']:''}
+${p['pp-ap']?'AP/IB courses: '+p['pp-ap']:''}
+${p['pp-ecs']?'Extracurriculars: '+p['pp-ecs']:''}
+${p['pp-awards']?'Awards: '+p['pp-awards']:''}
+${p['pp-major']?'Intended major: '+p['pp-major']:''}
+
+Respond in this exact format:
+**Likelihood: [Likely / Possible / Reach / Long Shot]**
+Brief 1-sentence explanation of likelihood category.
+
+**Strengths for ${school.name}:**
+- (2-3 specific strengths)
+
+**Areas of concern:**
+- (1-2 honest concerns)
+
+**One tip:** (specific actionable advice to improve chances at this school)
+
+Keep total response under 180 words. Be honest and specific.`;
+  try{
+    const reply=await callGroq([{role:'user',content:prompt}]);
+    school.aiChances=reply;saveState();
+    el.innerHTML=md(reply);
+  }catch(e){el.innerHTML=`<span style="color:var(--danger);font-size:12px">Error: ${e.message}</span>`;}
+}
+
+/* ── COMPARE ── */
+function toggleCompare(id){
+  if(compareSelected.includes(id)){compareSelected=compareSelected.filter(i=>i!==id);}
+  else if(compareSelected.length<3){compareSelected.push(id);}
+  renderSchools();renderCompare();
+}
+
+function renderCompare(){
+  const chipsEl=document.getElementById('compare-chips');
+  const contentEl=document.getElementById('compare-content');
+  if(!S.schools.length){chipsEl.innerHTML='<p style="font-size:.8rem;color:var(--text3)">Add schools to your tracker first.</p>';contentEl.innerHTML='';return;}
+  chipsEl.innerHTML=S.schools.map(s=>`<div class="compare-chip${compareSelected.includes(s.id)?' selected':''}" onclick="toggleCompare(${s.id})">${compareSelected.includes(s.id)?'✓ ':''} ${s.name}</div>`).join('');
+  if(!compareSelected.length){contentEl.innerHTML='<div class="empty"><div class="empty-icon">⊞</div><p>Select schools above to compare them side by side</p></div>';return;}
+  const schools=compareSelected.map(id=>S.schools.find(s=>s.id===id)).filter(Boolean);
+  const metrics=[
+    {label:'Category',fn:s=>`<span class="sbadge ${s.type}">${s.type}</span>`,best:null},
+    {label:'Acceptance rate',fn:s=>s.colData?s.colData.accept+'%':'—',best:'lower',raw:s=>s.colData?s.colData.accept:null},
+    {label:'Avg admitted GPA',fn:s=>s.colData?s.colData.gpa:'—',best:'higher',raw:s=>s.colData?s.colData.gpa:null},
+    {label:'Avg SAT',fn:s=>s.colData?s.colData.sat:'—',best:'higher',raw:s=>s.colData?s.colData.sat:null},
+    {label:'Avg ACT',fn:s=>s.colData?s.colData.act:'—',best:'higher',raw:s=>s.colData?s.colData.act:null},
+    {label:'Tuition',fn:s=>s.colData?(s.colData.type==='Public'?`$${s.colData.tuitionIn}k / $${s.colData.tuitionOut}k`:`$${s.colData.tuitionIn}k`):'—',best:'lower',raw:s=>s.colData?s.colData.tuitionOut:null},
+    {label:'Avg Financial Aid',fn:s=>s.colData?`$${s.colData.avgAid}k/yr`:'—',best:'higher',raw:s=>s.colData?s.colData.avgAid:null},
+    {label:'Location',fn:s=>s.colData?`${s.colData.city}, ${s.colData.state}`:'—',best:null},
+    {label:'Type',fn:s=>s.colData?s.colData.type:'—',best:null},
+    {label:'Enrollment',fn:s=>s.colData&&s.colData.size?`${(s.colData.size*1000).toLocaleString()}`:'—',best:null},
+    {label:'EA Deadline',fn:s=>s.colData?s.colData.eaDead:'—',best:null},
+    {label:'ED Deadline',fn:s=>s.colData?s.colData.edDead:'—',best:null},
+    {label:'RD Deadline',fn:s=>s.colData?s.colData.rdDead:'—',best:null},
+    {label:'Popular Majors',fn:s=>s.colData?`<span style="font-size:.72rem">${s.colData.majors}</span>`:'—',best:null},
+    {label:'App status',fn:s=>`<span class="compare-badge" style="background:var(--cream2);font-size:10px">${s.status}</span>`,best:null},
+  ];
+  let html=`<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th style="width:150px">Metric</th>${schools.map(s=>`<th class="school-col">${s.name}</th>`).join('')}</tr></thead><tbody>`;
+  metrics.forEach(m=>{
+    const vals=schools.map(s=>m.raw?m.raw(s):null);
+    let bestIdx=-1;
+    if(m.best&&vals.some(v=>v!==null)){
+      bestIdx=vals.reduce((bi,v,i)=>{if(v===null)return bi;if(bi===-1)return i;return m.best==='higher'?(v>vals[bi]?i:bi):(v<vals[bi]?i:bi);}, -1);
+    }
+    html+=`<tr><td class="metric-label">${m.label}</td>${schools.map((s,i)=>`<td class="${bestIdx===i?'compare-best':''}">${m.fn(s)}</td>`).join('')}</tr>`;
+  });
+  html+='</tbody></table></div>';
+  contentEl.innerHTML=html;
+}
+
+/* ── MAP ── */
+function initMap(){
+  if(!leafletMap){
+    leafletMap=L.map('map-container').setView([38.5,-97],4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(leafletMap);
+  }else{leafletMap.invalidateSize();}
+  refreshMapMarkers();
+}
+
+function refreshMapMarkers(){
+  mapMarkers.forEach(m=>m.remove());mapMarkers=[];
+  const colors={dream:'#c8922a',reach:'#b85c38',match:'#2d5a8e',safety:'#2d6a4f'};
+  if(!S.schools.length){return;}
+  S.schools.forEach(school=>{
+    const d=school.colData;if(!d||!d.lat)return;
+    const color=colors[school.type]||'#888';
+    const icon=L.divIcon({html:`<div style="width:14px;height:14px;background:${color};border-radius:50%;border:2.5px solid white;box-shadow:0 1px 5px rgba(0,0,0,.35)"></div>`,iconSize:[14,14],iconAnchor:[7,7]});
+    const tuition=d.type==='Public'?`$${d.tuitionIn}k / $${d.tuitionOut}k (in/out)`:` $${d.tuitionIn}k/yr`;
+    const m=L.marker([d.lat,d.lng],{icon}).addTo(leafletMap).bindPopup(`<div style="font-family:'DM Sans',sans-serif;min-width:180px"><strong style="font-size:13px">${school.name}</strong><br><span style="font-size:11px;color:#888">${d.city}, ${d.state} · ${d.type}</span><hr style="margin:5px 0;border:none;border-top:1px solid #eee"><table style="font-size:11px;width:100%"><tr><td style="color:#888">Accept</td><td style="font-weight:500">${d.accept}%</td></tr><tr><td style="color:#888">Avg GPA</td><td style="font-weight:500">${d.gpa}</td></tr><tr><td style="color:#888">Avg SAT</td><td style="font-weight:500">${d.sat}</td></tr><tr><td style="color:#888">Tuition</td><td style="font-weight:500">${tuition}</td></tr><tr><td style="color:#888">Avg Aid</td><td style="font-weight:500">$${d.avgAid}k/yr</td></tr><tr><td style="color:#888">RD Deadline</td><td style="font-weight:500">${d.rdDead}</td></tr></table><div style="margin-top:6px"><span style="background:${color}22;color:${color};font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px">${school.type.toUpperCase()}</span></div></div>`);
+    mapMarkers.push(m);
+  });
+  if(mapMarkers.length){const grp=L.featureGroup(mapMarkers);leafletMap.fitBounds(grp.getBounds().pad(.2));}
+}
+
+/* ── DOCS ── */
+let curFile=null,curType='essay',curText='';
+function pickType(el,type){document.querySelectorAll('.atype').forEach(a=>a.classList.remove('sel'));el.classList.add('sel');curType=type;}
+function dragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('drag');}
+function dragLeave(e){document.getElementById('drop-zone').classList.remove('drag');}
+function dropFile(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)loadDocFile(f);}
+function isImg(f){return /\.(png|jpg|jpeg|webp)$/i.test(f.name);}
+function isPdf(f){return /\.pdf$/i.test(f.name);}
+async function extractPdfText(file){const ab=await file.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:new Uint8Array(ab)}).promise;let text='';for(let i=1;i<=Math.min(pdf.numPages,15);i++){const pg=await pdf.getPage(i);const tc=await pg.getTextContent();text+=tc.items.map(t=>t.str).join(' ')+'\n';}return text.trim();}
+function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
+
+async function loadDocFile(file){
+  if(!file)return;curFile=file;curText='';
+  document.getElementById('doc-result').style.display='none';
+  document.getElementById('doc-prev-section').style.display='block';
+  document.getElementById('doc-filename').textContent=file.name;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const badge=document.getElementById('doc-fbadge');badge.textContent=ext.toUpperCase();badge.className='fbadge '+(isImg(file)?'img':isPdf(file)?'pdf':'txt');
+  const thumb=document.getElementById('doc-thumb');const textPrev=document.getElementById('doc-text-prev');const statusEl=document.getElementById('doc-status');
+  thumb.style.display='none';textPrev.style.display='none';statusEl.style.display='none';statusEl.className='status-bar';
+  if(isImg(file)){thumb.src=URL.createObjectURL(file);thumb.style.display='block';}
+  else if(isPdf(file)){setDocStatus('Extracting PDF text...');try{curText=await extractPdfText(file);statusEl.style.display='none';textPrev.textContent=(curText.slice(0,400)||'(no text)')+'...';textPrev.style.display='block';}catch(e){setDocStatus('PDF error: '+e.message,true);}}
+  else{try{curText=await file.text();}catch(e){curText='';}textPrev.textContent=(curText.slice(0,400)||'(empty)')+'...';textPrev.style.display='block';}
+}
+function setDocStatus(msg,err){const el=document.getElementById('doc-status');el.textContent=msg;el.className='status-bar'+(err?' err':'');el.style.display='block';}
+function clearDoc(){curFile=null;curText='';document.getElementById('doc-prev-section').style.display='none';document.getElementById('doc-result').style.display='none';document.getElementById('doc-file-input').value='';}
+
+const PROMPTS={essay:`You are an expert college admissions essay coach. Review this document:\n1. **Opening hook** — strength and improvements\n2. **Voice & authenticity** — does it sound genuine?\n3. **Narrative structure** — flow and arc\n4. **Central theme** — clarity and depth\n5. **Concrete improvements** — specific suggestions\n6. **Overall score** — out of 10 with reasoning\nBe honest and encouraging.`,transcript:`Analyze this academic record:\n1. **Overall strength** — competitive for selective colleges?\n2. **Grade trends** — improving or declining?\n3. **Course rigor** — challenging themselves?\n4. **Subject strengths/weaknesses**\n5. **Specific recommendations** to strengthen the academic profile`,recletter:`Evaluate this recommendation letter:\n1. **Overall strength** — weak/average/strong/exceptional\n2. **Specificity** — concrete anecdotes vs vague praise\n3. **Recommender enthusiasm**\n4. **What it reveals** about the student\n5. **Letter grade** (A/B/C/D/F) with reasoning`,fit:`Analyze for college fit:\n1. **Academic preparation signals**\n2. **Intellectual curiosity evidence**\n3. **Character indicators**\n4. **Potential concerns**\n5. **Best-fit school types**`,resume:`Review this activities list or resume:\n1. **Depth vs breadth**\n2. **Leadership & impact**\n3. **Narrative coherence**\n4. **Strongest and weakest entries**\n5. **Specific rewrite suggestions**`,general:`Provide thorough analysis for college admissions. Cover key themes, strengths, weaknesses, and how an admissions officer would view it.`};
+
+async function analyzeDoc(){
+  if(!curFile)return;
+  const btn=document.getElementById('analyze-btn');btn.disabled=true;btn.textContent='Analyzing...';
+  document.getElementById('doc-result').style.display='none';setDocStatus('');
+  const prompt='You are a college admissions expert. '+PROMPTS[curType];
+  try{
+    let reply,label;
+    if(isImg(curFile)){setDocStatus('Sending to Llama 4 Scout...');label='Llama 4 Scout (Vision)';const b64=await fileToBase64(curFile);reply=await callGroqVision(b64,curFile.type||'image/jpeg',prompt+'\n\nAnalyze this document image thoroughly.');}
+    else{setDocStatus('Sending to Llama 3.3 70B...');label='Llama 3.3 70B';const text=curText||(await curFile.text().catch(()=>''));if(!text.trim())throw new Error('No text extracted from file.');reply=await callGroq([{role:'user',content:prompt+'\n\n---\nDocument:\n'+text.slice(0,8000)}]);}
+    document.getElementById('doc-status').style.display='none';
+    document.getElementById('result-model').textContent='— '+label;
+    document.getElementById('result-content').innerHTML=md(reply);
+    document.getElementById('doc-result').style.display='block';
+    S.docCount=(S.docCount||0)+1;saveState();refreshHomeStats();
+  }catch(e){setDocStatus('Error: '+e.message,true);}
+  btn.disabled=false;btn.innerHTML='⊙ Analyze document';
+}
+
+/* ── PROFILE AUTO-FILL ── */
+const EXTRACT_PROMPT=`Extract college application info from this document. Return ONLY raw JSON (no markdown, no explanation):\n{"name":"first name or null","grade":"grade 9-12 or freshman/sophomore/junior/senior or null","high_school":"school name or null","state":"state or null","gpa":"unweighted GPA like 3.7 or null","weighted_gpa":"weighted GPA or null","test_scores":"SAT or ACT score or null","ap_courses":"comma-separated AP/IB courses or null","intended_major":"major or null","career_interests":"careers or null","extracurriculars":"comma-separated activities or null","awards":"comma-separated honors or null","notes":"other info or null"}`;
+
+async function autoFillProfile(file){
+  if(!file)return;const statusEl=document.getElementById('fill-status');statusEl.textContent='Reading file...';statusEl.className='fill-status';
+  try{
+    let response;
+    if(isImg(file)){statusEl.textContent='Analyzing with Llama 4 Scout...';const b64=await fileToBase64(file);response=await callGroqVision(b64,file.type||'image/jpeg',EXTRACT_PROMPT);}
+    else{statusEl.textContent='Extracting text...';let text='';if(isPdf(file))text=await extractPdfText(file);else text=await file.text().catch(()=>'');if(!text.trim())throw new Error('No text in file.');statusEl.textContent='Analyzing with Llama 3.3 70B...';response=await callGroq([{role:'user',content:EXTRACT_PROMPT+'\n\nDocument:\n'+text.slice(0,7000)}]);}
+    const ex=parseProfileJson(response);if(!ex)throw new Error('Could not parse AI response.');
+    let filled=0;
+    const map={name:'pp-name',gpa:'pp-gpa',weighted_gpa:'pp-wgpa',test_scores:'pp-test',ap_courses:'pp-ap',intended_major:'pp-major',career_interests:'pp-career',extracurriculars:'pp-ecs',awards:'pp-awards',state:'pp-state',high_school:'pp-school',notes:'pp-notes'};
+    for(const[k,id]of Object.entries(map)){const v=ex[k];if(v&&String(v).trim()&&v!=='null'){const el=document.getElementById(id);if(el){el.value=String(v).trim();filled++;}}}
+    if(ex.grade){const g=String(ex.grade).toLowerCase().trim();const gm={'9':'9th grade (Freshman)','10':'10th grade (Sophomore)','11':'11th grade (Junior)','12':'12th grade (Senior)','freshman':'9th grade (Freshman)','sophomore':'10th grade (Sophomore)','junior':'11th grade (Junior)','senior':'12th grade (Senior)'};const match=gm[g]||Object.values(gm).find(v=>v.toLowerCase().includes(g));if(match){document.getElementById('pp-grade').value=match;filled++;}}
+    statusEl.textContent=`✓ Filled ${filled} field${filled!==1?'s':''}! Review and save.`;statusEl.className='fill-status ok';setTimeout(()=>statusEl.textContent='',6000);
+  }catch(e){statusEl.textContent='Error: '+e.message;statusEl.className='fill-status err';}
+}
+function parseProfileJson(text){const clean=text.replace(/```json/gi,'').replace(/```/g,'').trim();try{return JSON.parse(clean);}catch(e){}const m=clean.match(/\{[\s\S]*\}/);if(m)try{return JSON.parse(m[0]);}catch(e2){}return null;}
+
+/* ── PROFILE ── */
+const PFS=['pp-name','pp-grade','pp-gpa','pp-wgpa','pp-test','pp-ap','pp-major','pp-career','pp-ecs','pp-awards','pp-pref','pp-budget','pp-notes','pp-state','pp-school'];
+function loadProfile(){const p=S.profile||{};PFS.forEach(id=>{const el=document.getElementById(id);if(el&&p[id])el.value=p[id];});}
+function saveProfile(){const p={};PFS.forEach(id=>{const el=document.getElementById(id);if(el)p[id]=el.value.trim();});S.profile=p;saveState();const f=document.getElementById('saved-flash');f.style.opacity='1';setTimeout(()=>f.style.opacity='0',2200);}
+
+function buildSys(){
+  const p=S.profile;const lines=[];
+  if(p['pp-name'])lines.push('Name: '+p['pp-name']);if(p['pp-grade'])lines.push('Grade: '+p['pp-grade']);if(p['pp-state'])lines.push('State: '+p['pp-state']);if(p['pp-school'])lines.push('High school: '+p['pp-school']);if(p['pp-gpa'])lines.push('Unweighted GPA: '+p['pp-gpa']);if(p['pp-wgpa'])lines.push('Weighted GPA: '+p['pp-wgpa']);if(p['pp-test'])lines.push('Test scores: '+p['pp-test']);if(p['pp-ap'])lines.push('AP/IB: '+p['pp-ap']);if(p['pp-major'])lines.push('Major: '+p['pp-major']);if(p['pp-career'])lines.push('Career: '+p['pp-career']);if(p['pp-ecs'])lines.push('ECs: '+p['pp-ecs']);if(p['pp-awards'])lines.push('Awards: '+p['pp-awards']);if(p['pp-pref'])lines.push('Pref: '+p['pp-pref']);if(p['pp-budget'])lines.push('Finances: '+p['pp-budget']);
+  const schoolList=S.schools.length?'\n\nStudent\'s school list:\n'+S.schools.map(s=>`- ${s.name} (${s.type}, status: ${s.status})${s.colData?` — ${s.colData.accept}% acceptance, avg GPA ${s.colData.gpa}`:''}`).join('\n'):'';
+  let sys='You are Compass, an expert college admissions advisor. Give honest, specific, actionable advice. Reference the student\'s school list when relevant.';
+  if(lines.length)sys+='\n\nStudent profile:\n'+lines.join('\n');
+  sys+=schoolList;return sys;
+}
+
+/* ── ADVISOR ── */
+const msgsEl=document.getElementById('chat-msgs');
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAdvisor();}}
+function addMsg(role,text){const name=S.profile['pp-name'];const av=role==='assistant'?'C':(name?name.slice(0,2).toUpperCase():'ME');const div=document.createElement('div');div.className='msg '+role;div.innerHTML=`<div class="msg-av">${av}</div><div class="msg-bbl">${md(text)}</div>`;msgsEl.appendChild(div);msgsEl.scrollTop=msgsEl.scrollHeight;}
+function addTyping(){const div=document.createElement('div');div.className='msg assistant';div.id='typing';div.innerHTML=`<div class="msg-av">C</div><div class="msg-bbl"><div class="typing-wrap"><span></span><span></span><span></span></div></div>`;msgsEl.appendChild(div);msgsEl.scrollTop=msgsEl.scrollHeight;}
+async function sendAdvisor(override){
+  const input=document.getElementById('advisor-input');const btn=document.getElementById('adv-send');
+  const text=override||input.value.trim();if(!text||btn.disabled)return;
+  input.value='';input.style.height='auto';btn.disabled=true;
+  addMsg('user',text);S.advHistory.push({role:'user',content:text});addTyping();
+  try{const reply=await callGroq(S.advHistory,buildSys());document.getElementById('typing')?.remove();S.advHistory.push({role:'assistant',content:reply});S.msgCount=(S.msgCount||0)+1;saveState();addMsg('assistant',reply);}
+  catch(e){document.getElementById('typing')?.remove();addMsg('assistant','**Error:** '+e.message);}
+  btn.disabled=false;input.focus();refreshHomeStats();
+}
+
+/* ── CHECKLIST ── */
+const DEFAULT_CL=[
+  {phase:'Junior Year',icon:'◐',tasks:[{id:'j1',text:'Research colleges and start your school list',tag:'Research',urgency:'low',done:false},{id:'j2',text:'Take PSAT for scholarship eligibility',tag:'Testing',urgency:'low',done:false},{id:'j3',text:'Prep and take the SAT or ACT',tag:'Testing',urgency:'med',done:false},{id:'j4',text:'Ask teachers for recommendation letters (early!)',tag:'Rec Letters',urgency:'high',done:false},{id:'j5',text:'Start brainstorming Common App essay topics',tag:'Essays',urgency:'med',done:false},{id:'j6',text:'Visit campuses in person or virtually',tag:'Research',urgency:'low',done:false}]},
+  {phase:'Summer Before Senior Year',icon:'◎',tasks:[{id:'s1',text:'Write and revise your Common App personal statement',tag:'Essays',urgency:'high',done:false},{id:'s2',text:'Finalize your college list (8–12 schools)',tag:'Planning',urgency:'high',done:false},{id:'s3',text:'Create your Common App / Coalition App account',tag:'Applications',urgency:'med',done:false},{id:'s4',text:'Research financial aid requirements per school',tag:'Financial Aid',urgency:'med',done:false},{id:'s5',text:'Retake SAT/ACT if needed',tag:'Testing',urgency:'med',done:false}]},
+  {phase:'Senior Fall (Aug–Nov)',icon:'⊙',tasks:[{id:'f1',text:'Finalize and submit EA/ED applications',tag:'Applications',urgency:'high',done:false},{id:'f2',text:'Write supplemental essays for each school',tag:'Essays',urgency:'high',done:false},{id:'f3',text:'Confirm recommendation letters are submitted',tag:'Rec Letters',urgency:'high',done:false},{id:'f4',text:'Request official transcripts',tag:'Applications',urgency:'high',done:false},{id:'f5',text:'Fill out FAFSA (opens Oct 1)',tag:'Financial Aid',urgency:'high',done:false},{id:'f6',text:'Fill out CSS Profile if required',tag:'Financial Aid',urgency:'med',done:false}]},
+  {phase:'Senior Winter (Dec–Feb)',icon:'◈',tasks:[{id:'w1',text:'Submit all RD applications by Jan 1–Feb 1',tag:'Applications',urgency:'high',done:false},{id:'w2',text:'Review EA/ED decisions and respond',tag:'Applications',urgency:'high',done:false},{id:'w3',text:'Check financial aid portals for missing docs',tag:'Financial Aid',urgency:'med',done:false},{id:'w4',text:'Apply for external scholarships',tag:'Financial Aid',urgency:'med',done:false},{id:'w5',text:'Keep grades up — colleges see senior grades',tag:'Academics',urgency:'high',done:false}]},
+  {phase:'Senior Spring (Mar–May)',icon:'✓',tasks:[{id:'sp1',text:'Compare financial aid award letters',tag:'Financial Aid',urgency:'high',done:false},{id:'sp2',text:'Visit admitted schools and attend open houses',tag:'Research',urgency:'med',done:false},{id:'sp3',text:'Follow up on waitlist status if applicable',tag:'Applications',urgency:'med',done:false},{id:'sp4',text:'Submit enrollment deposit by May 1',tag:'Applications',urgency:'high',done:false},{id:'sp5',text:'Notify other schools you are declining',tag:'Applications',urgency:'med',done:false},{id:'sp6',text:'Celebrate — you made it!',tag:'🎉',urgency:'low',done:false}]}
+];
+function getCL(){if(!S.checklist)S.checklist=JSON.parse(JSON.stringify(DEFAULT_CL));return S.checklist;}
+function toggleTask(pi,tid){const cl=getCL();const t=cl[pi].tasks.find(t=>t.id===tid);if(t){t.done=!t.done;S.checklist=cl;saveState();renderChecklist();refreshHomeStats();}}
+function addCustomTask(pi){const inp=document.getElementById('cl-add-'+pi);const text=inp.value.trim();if(!text)return;const cl=getCL();cl[pi].tasks.push({id:'c'+Date.now(),text,tag:'Custom',urgency:'med',done:false});S.checklist=cl;saveState();renderChecklist();inp.value='';}
+function renderChecklist(){document.getElementById('checklist-body').innerHTML=getCL().map((ph,pi)=>{const done=ph.tasks.filter(t=>t.done).length;return`<div class="cl-phase"><div class="cl-phase-hdr"><span style="font-size:14px">${ph.icon}</span><h3>${ph.phase}</h3><span class="cl-phase-badge">${done}/${ph.tasks.length}</span></div><div class="cl-items">${ph.tasks.map(t=>`<div class="cl-row${t.done?' done':''}" onclick="toggleTask(${pi},'${t.id}')"><div class="cl-check">${t.done?'✓':''}</div><div class="cl-urg ${t.urgency}"></div><div class="cl-text">${t.text}</div><span class="cl-tag">${t.tag}</span></div>`).join('')}</div><div class="add-task-row"><input type="text" id="cl-add-${pi}" placeholder="Add custom task..." onkeydown="if(event.key==='Enter')addCustomTask(${pi})"><button onclick="addCustomTask(${pi})">+ Add</button></div></div>`;}).join('');}
+
+/* ── HOME ── */
+function refreshHome(){refreshHomeStats();renderHomeCl();}
+function refreshHomeStats(){document.getElementById('h-schools').textContent=S.schools.length;const cl=getCL();const done=cl.reduce((a,p)=>a+p.tasks.filter(t=>t.done).length,0);document.getElementById('h-tasks').textContent=done;document.getElementById('h-docs').textContent=S.docCount||0;document.getElementById('h-msgs').textContent=S.msgCount||0;}
+function renderHomeCl(){const cl=getCL();const upcoming=[];cl.forEach(p=>p.tasks.filter(t=>!t.done).forEach(t=>upcoming.push({...t,phase:p.phase})));const el=document.getElementById('home-cl-prev');if(!upcoming.length){el.innerHTML='<div class="cl-prev-item"><div class="cl-prev-dot pending"></div><span>All tasks complete!</span></div>';return;}el.innerHTML=upcoming.slice(0,6).map(t=>`<div class="cl-prev-item" onclick="goTo('checklist',document.querySelector('[data-page=checklist]'))"><div class="cl-prev-dot ${t.urgency==='high'?'urgent':'pending'}"></div><span style="flex:1">${t.text}</span><span style="font-size:10px;color:var(--text3)">${t.phase}</span></div>`).join('');}
+
+/* ── MD ── */
+function md(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/^#{1,3} (.+)$/gm,'<strong>$1</strong>').replace(/^[-•] (.+)$/gm,'<li>$1</li>').replace(/^\d+\. (.+)$/gm,'<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)/g,m=>`<ul style="padding-left:15px;margin:4px 0">${m}</ul>`).replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>').replace(/^([^<][\s\S]*)$/s,s=>`<p>${s}</p>`);}
+
+loadState();loadProfile();refreshHome();renderChecklist();renderSchools();
+</script>
+</body>
+</html>
